@@ -1,12 +1,21 @@
-import {AppBar, Box, Container, Toolbar, Typography} from "@mui/material";
+import {
+    AppBar,
+    Backdrop,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    TextField,
+    Toolbar,
+    Typography
+} from "@mui/material";
 import {decode, encode} from "./saozi3.ts";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {decompressFrames, parseGIF} from "gifuct-js";
 import GIF from "gif.js";
+import {MuiFileInput} from "mui-file-input";
 
-async function getImageData(input: HTMLInputElement) {
-    const file = input.files?.[0]
-    if (!file) throw new Error('请先选择图片')
+async function getImageData(file: File) {
     if (file.type === 'image/gif') {
         return decompressFrames(parseGIF(await file.arrayBuffer()), true)
             .map(({patch, dims: {width, height}, delay}) => ({data: new ImageData(patch, width, height), delay}))
@@ -34,28 +43,21 @@ async function getImageData(input: HTMLInputElement) {
 }
 
 async function setImageData(image: { data: ImageData, delay: number }[] | ImageData) {
-    let url: string
     if (Array.isArray(image)) {
         const gif = new GIF()
         image.forEach(({data, delay}) => gif.addFrame(data, {delay}))
-        url = URL.createObjectURL(await new Promise<Blob>(resolve => {
+        return URL.createObjectURL(await new Promise<Blob>(resolve => {
             gif.on("finished", resolve)
             gif.render()
         }))
-    } else {
-        const canvas = document.createElement('canvas')
-        const {width, height} = image
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')!
-        ctx.putImageData(image, 0, 0)
-        url = canvas.toDataURL()
     }
-    const a = document.createElement('a')
-    a.href = url
-    a.download = ''
-    a.click()
-    URL.revokeObjectURL(url)
+    const canvas = document.createElement('canvas')
+    const {width, height} = image
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')!
+    ctx.putImageData(image, 0, 0)
+    return canvas.toDataURL()
 }
 
 function encrypt(image: { data: ImageData, delay: number }[] | ImageData, seed: string) {
@@ -74,8 +76,46 @@ function decrypt(image: { data: ImageData, delay: number }[] | ImageData, seed: 
 
 export default function App() {
     const [password, setPassword] = useState('')
+    const [en, setEn] = useState<File | null>(null)
+    const [de, setDe] = useState<File | null>(null)
+    useEffect(() => {
+        if (!en) return
+        setDe(null)
+        setLoading(true)
+        ;(async () => {
+            setUrl(await setImageData(encrypt(await getImageData(en), password)))
+        })()
+            .catch(reason => {
+                console.error(reason)
+                alert(reason)
+            })
+            .finally(() => setLoading(false))
+    }, [en])
+    useEffect(() => {
+        if (!de) return
+        setEn(null)
+        setLoading(true)
+        ;(async () => {
+            setUrl(await setImageData(decrypt(await getImageData(de), password)))
+        })()
+            .catch(reason => {
+                console.error(reason)
+                alert(reason)
+            })
+            .finally(() => setLoading(false))
+    }, [de])
+    const [url, setUrl] = useState<string>()
+    useEffect(() => {
+        return () => {
+            if (url !== undefined) URL.revokeObjectURL(url)
+        }
+    }, [url])
+    const [loading, setLoading] = useState(false)
     return (
         <>
+            <Backdrop open={loading} sx={(theme) => ({color: '#fff', zIndex: theme.zIndex.drawer + 1})}>
+                <CircularProgress color="inherit"/>
+            </Backdrop>
             <AppBar color="secondary">
                 <Toolbar>
                     <Typography variant="h6" component="div">
@@ -88,42 +128,35 @@ export default function App() {
                 <Typography>
                     第3代图片加解密技术，基于混沌置乱进行了改进，抗格式转换、抗有损压缩，视觉效果完美，无噪点、无彩纹
                 </Typography>
-                <Typography>
+                <Typography gutterBottom>
                     原本仅支持所有静态图片格式，现在新增了对gif格式动态图片的支持
                 </Typography>
-                <Box sx={{'& >*': {margin: 2}}}>
-                    <div>
-                        <label>
-                            密码：
-                            <input value={password} onChange={event => setPassword(event.target.value)}/>
-                        </label>
-                    </div>
-                    <div>
-                        <label>
-                            加密：
-                            <input type="file" accept="image/*" onChange={async event => {
-                                try {
-                                    await setImageData(encrypt(await getImageData(event.target as HTMLInputElement), password))
-                                } catch (e) {
-                                    console.error(e)
-                                    alert(e)
-                                }
-                            }}/>
-                        </label>
-                    </div>
-                    <div>
-                        <label>
-                            解密：
-                            <input type="file" accept="image/*" onChange={async event => {
-                                try {
-                                    await setImageData(decrypt(await getImageData(event.target as HTMLInputElement), password))
-                                } catch (e) {
-                                    console.error(e)
-                                    alert(e)
-                                }
-                            }}/>
-                        </label>
-                    </div>
+                <Box sx={{'& >*': {m: 1}}}>
+                    <TextField
+                        multiline
+                        label="密码"
+                        value={password}
+                        onChange={event => setPassword(event.target.value)}
+                    />
+                    <MuiFileInput
+                        label="加密"
+                        inputProps={{accept: 'image/*'}}
+                        value={en}
+                        onChange={setEn}
+                    />
+                    <MuiFileInput
+                        label="解密"
+                        inputProps={{accept: 'image/*'}}
+                        value={de}
+                        onChange={setDe}
+                    />
+                    {url !== undefined && <Button variant="contained" onClick={() => {
+                        const a = document.createElement('a')
+                        a.download = ''
+                        a.href = url
+                        a.click()
+                    }}>保存输出</Button>}
+                    <img alt="输出" src={url}/>
                 </Box>
             </Container>
         </>
