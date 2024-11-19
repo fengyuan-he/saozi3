@@ -131,33 +131,47 @@ export default function App() {
                 <Typography gutterBottom>
                     原本仅支持所有静态图片格式，现在新增了对gif格式动态图片的支持
                 </Typography>
-                <Box sx={{'& >*': {m: 1}}}>
-                    <TextField
-                        multiline
-                        label="密码"
-                        value={password}
-                        onChange={event => setPassword(event.target.value)}
-                    />
-                    <MuiFileInput
-                        label="加密"
-                        inputProps={{accept: 'image/*'}}
-                        value={en}
-                        onChange={setEn}
-                    />
-                    <MuiFileInput
-                        label="解密"
-                        inputProps={{accept: 'image/*'}}
-                        value={de}
-                        onChange={setDe}
-                    />
-                    {url !== undefined && <Button variant="contained" onClick={() => {
-                        const a = document.createElement('a')
-                        a.download = ''
-                        a.href = url
-                        a.click()
-                    }}>保存输出</Button>}
-                    <img alt="输出" src={url}/>
-                </Box>
+                <TextField
+                    sx={{m: 1}}
+                    multiline
+                    label="密码"
+                    value={password}
+                    onChange={event => setPassword(event.target.value)}
+                />
+                <MuiFileInput
+                    sx={{m: 1}}
+                    label="加密"
+                    inputProps={{accept: 'image/*'}}
+                    value={en}
+                    onChange={setEn}
+                />
+                <MuiFileInput
+                    sx={{m: 1}}
+                    label="解密"
+                    inputProps={{accept: 'image/*'}}
+                    value={de}
+                    onChange={setDe}
+                />
+                {url !== undefined &&
+                    <Button
+                        sx={{m: 1}}
+                        variant="contained"
+                        onClick={() => {
+                            const a = document.createElement('a')
+                            a.download = ''
+                            a.href = url
+                            a.click()
+                        }}
+                    >
+                        保存输出
+                    </Button>
+                }
+                <Box
+                    sx={{m: 1}}
+                    component="img"
+                    alt="输出"
+                    src={url}
+                />
             </Container>
         </>
     )
