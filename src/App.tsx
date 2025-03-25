@@ -5,6 +5,7 @@ import {
     Button,
     CircularProgress,
     Container,
+    Link,
     TextField,
     Toolbar,
     Typography
@@ -119,14 +120,17 @@ export default function App() {
             <AppBar color="secondary">
                 <Toolbar>
                     <Typography variant="h6" component="div">
-                        图片臊子3
+                        图片臊子 3.1
                     </Typography>
                 </Toolbar>
             </AppBar>
             <Toolbar/>
             <Container>
+                <Typography variant="h4" component="div" sx={{fontWeight: 'bold'}}>
+                    各位用户你们好，鉴于现在很难能保存到原图，我开发了免原图图片混淆技术<Link href="https://saozi5.netlify.app">图片臊子5</Link>，请大家转移至最新阵地，原网站仅留作备份
+                </Typography>
                 <Typography>
-                    第3代图片加解密技术，基于混沌置乱进行了改进，抗格式转换、抗有损压缩，视觉效果完美，无噪点、无彩纹
+                    第三代图片加解密技术，基于混沌置乱进行了改进，抗格式转换、抗有损压缩，视觉效果完美，无噪点、无彩纹
                 </Typography>
                 <Typography gutterBottom>
                     原本仅支持所有静态图片格式，现在新增了对gif格式动态图片的支持
